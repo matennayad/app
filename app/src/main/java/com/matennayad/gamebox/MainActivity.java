@@ -156,8 +156,8 @@ public class MainActivity extends Activity {
         void bold(float s,int c){p.setTypeface(Typeface.create("sans",Typeface.BOLD));p.setTextSize(s);p.setColor(c);}
         void normal(float s,int c){p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextSize(s);p.setColor(c);}
         void center(Canvas c,String s,float x,float y){c.drawText(s,x-p.measureText(s)/2,y,p);}
-        void rr(Canvas c,float l,float t,float r,float b,float rad,int c){p.setStyle(Paint.Style.FILL);p.setColor(c);c.drawRoundRect(l,t,r,b,rad,rad,p);}
-        void circle(Canvas c,float x,float y,float r,int c){p.setColor(c);p.setStyle(Paint.Style.FILL);c.drawCircle(x,y,r,p);}
+        void rr(Canvas canvas,float l,float t,float r,float b,float rad,int color){p.setStyle(Paint.Style.FILL);p.setColor(color);canvas.drawRoundRect(l,t,r,b,rad,rad,p);}
+        void circle(Canvas canvas,float x,float y,float r,int color){p.setColor(color);p.setStyle(Paint.Style.FILL);canvas.drawCircle(x,y,r,p);}
         String bestFor(int id){return String.valueOf(prefs.getInt("best_"+id,0));}
         void saveBest(){int old=prefs.getInt("best_"+gameId,0);if(score>old)prefs.edit().putInt("best_"+gameId,score).apply();best=Math.max(best,score);}
         void finishGame(String msg){running=false;saveBest();state=99;message=msg;h.removeCallbacksAndMessages(null);invalidate();}
@@ -209,7 +209,7 @@ public class MainActivity extends Activity {
                 float y=top+row*118;
                 rr(c,l,y,l+w,y+105,24,SUR);
                 rr(c,l+12,y+12,l+55,y+55,15,SUR2);
-                bold(22,TXT);center(c,g.icon,l+33.5f,y+40,p);
+                bold(22,TXT);center(c,g.icon,l+33.5f,y+40);
                 bold(16,TXT);c.drawText(g.title,l+14,y+77,p);
                 normal(11,MUTED);c.drawText(g.cat+" • "+bestFor(g.id),l+14,y+95,p);
                 col++;if(col==2){col=0;row++;}
