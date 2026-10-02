@@ -36,7 +36,7 @@ public class MainActivity extends Activity {
         Random rnd=new Random();
         SharedPreferences prefs;
         ArrayList<Game> games=new ArrayList<>();
-        String[] cats={"הכול","מהירות","חשיבה","שניים","ארקייד","זיכרון","אתגרים","מבחנים","מסתורין","זמן","קלפים"};
+        String[] cats={"הכול","מהירות","חשיבה","שניים","ארקייד","זיכרון","אתגרים","מבחנים","מסתורין","זמן","קלפים","סימולציה","אסטרטגיה"};
         int screen=0,selectedCat=0,gameId=-1,score=0,best=0,round=0,state=0,answer=0,a=0,b=0;
         long start;
         float scrollY=0f,downX,downY,lastY,lastMoveY;
@@ -48,6 +48,10 @@ public class MainActivity extends Activity {
         int[] board=new int[9],memory=new int[12],seq=new int[12];
         String input="",message="";
         boolean playerTurn=true;
+        float simCash=10000f,simPrice=100f,simShares=0f;
+        float simResource=50f,simRating=50f;
+        int simDay=1;
+        String simStatus="";
 
         GameView(Context c){super(c);prefs=getSharedPreferences("scores",MODE_PRIVATE);buildGames();}
 
@@ -153,6 +157,26 @@ public class MainActivity extends Activity {
             addGame(98,"מספר הקלף","🔢","קלפים",12);
             addGame(99,"מלכת הקלפים","👸","קלפים",12);
             addGame(100,"קלף אחרון","🏁","קלפים",12);
+            addGame(101,"בורסה: סוחר יום","📈","סימולציה",15);
+            addGame(102,"בורסה: תיק השקעות","💹","אסטרטגיה",15);
+            addGame(103,"מנהל עיר","🏙️","סימולציה",16);
+            addGame(104,"ראש עיר","🏛️","אסטרטגיה",16);
+            addGame(105,"מנהל שדה תעופה","✈️","סימולציה",17);
+            addGame(106,"חברת תעופה","🛫","אסטרטגיה",17);
+            addGame(107,"מנהל מסעדה","🍽️","סימולציה",18);
+            addGame(108,"אימפריית מסעדות","👨‍🍳","אסטרטגיה",18);
+            addGame(109,"מנהל מלון","🏨","סימולציה",19);
+            addGame(110,"רשת מלונות","🌟","אסטרטגיה",19);
+            addGame(111,"חווה חכמה","🌾","סימולציה",20);
+            addGame(112,"אימפריית חקלאות","🚜","אסטרטגיה",20);
+            addGame(113,"חברת משלוחים","📦","סימולציה",21);
+            addGame(114,"אימפריית לוגיסטיקה","🚚","אסטרטגיה",21);
+            addGame(115,"תחנת כוח","⚡","סימולציה",22);
+            addGame(116,"רשת אנרגיה","🔋","אסטרטגיה",22);
+            addGame(117,"מושבת מאדים","🚀","סימולציה",23);
+            addGame(118,"אימפריית חלל","🪐","אסטרטגיה",23);
+            addGame(119,"מלך האימפריה","👑","אסטרטגיה",24);
+            addGame(120,"בונה אימפריה","🗺️","סימולציה",24);
         }
 
         void bold(float s,int c){p.setTypeface(Typeface.create("sans",Typeface.BOLD));p.setTextSize(s);p.setColor(c);}
@@ -171,7 +195,7 @@ public class MainActivity extends Activity {
             int count=0;
             for(Game g:games) if(selectedCat==0||g.cat.equals(cats[selectedCat])) count++;
             int rows=(count+1)/2;
-            return Math.max(0,258+rows*118-(getHeight()-14));
+            return Math.max(0,300+rows*118-(getHeight()-14));
         }
         void startFling(){
             if(Math.abs(flingVelocity)<0.05f) return;
@@ -194,7 +218,7 @@ public class MainActivity extends Activity {
         void drawHome(Canvas c){
             normal(13,MUTED);c.drawText("GAMEBOX",24,28,p);
             bold(32,TXT);c.drawText("המשחקייה שלך",24,62,p);
-            normal(14,MUTED);c.drawText("100 משחקים • אופליין • שיאים נשמרים",25,85,p);
+            normal(14,MUTED);c.drawText("120 משחקים • אופליין • סימולציה ואסטרטגיה",25,85,p);
 
             rr(c,getWidth()-118,18,getWidth()-20,68,20,SUR2);
             bold(20,GOLD);center(c,"★",getWidth()-91,50);
@@ -207,17 +231,16 @@ public class MainActivity extends Activity {
             bold(21,TXT);c.drawText(daily.icon+"  "+daily.title,38,153,p);
             normal(12,Color.WHITE);c.drawText("לחץ כדי לשחק עכשיו",38,172,p);
             
-            // Categories
-            float cx=20;
+            // Categories: two compact rows so every category is reachable.
+            float chipW=(getWidth()-56)/7f;
             for(int i=0;i<cats.length;i++){
-                float ww=Math.max(70,p.measureText(cats[i])+34);
-                rr(c,cx,198,cx+ww,240,18,i==selectedCat?ACC:SUR);
-                bold(13,i==selectedCat?TXT:MUTED);center(c,cats[i],cx+ww/2,225);
-                cx+=ww+8;
-                if(cx>getWidth()-70) break;
+                int cr=i/7,cc=i%7;
+                float l=20+cc*(chipW+6), t=195+cr*46;
+                rr(c,l,t,l+chipW,t+39,16,i==selectedCat?ACC:SUR);
+                bold(10,i==selectedCat?TXT:MUTED);center(c,cats[i],l+chipW/2,t+25);
             }
 
-            int top=258;
+            int top=300;
             int count=0;
             for(Game g:games)if(selectedCat==0||g.cat.equals(cats[selectedCat]))count++;
             int rows=(count+1)/2;
@@ -225,7 +248,7 @@ public class MainActivity extends Activity {
             if(scrollY>maxScroll)scrollY=maxScroll;
 
             c.save();
-            c.clipRect(0,250,getWidth(),getHeight());
+            c.clipRect(0,295,getWidth(),getHeight());
             c.translate(0,-scrollY);
             int row=0,col=0;
             for(Game g:games){
@@ -245,7 +268,7 @@ public class MainActivity extends Activity {
             if(maxScroll>0){
                 float track=300;
                 float thumb=Math.max(52,track*(getHeight()/(getHeight()+maxScroll)));
-                float sy=254+(track-thumb)*(scrollY/maxScroll);
+                float sy=298+(track-thumb)*(scrollY/maxScroll);
                 rr(c,getWidth()-7,sy,getWidth()-3,sy+thumb,4,SUR2);
             }
         }
@@ -260,7 +283,10 @@ public class MainActivity extends Activity {
                 case 0:tap(c);break;case 1:reaction(c);break;case 2:memoryGame(c);break;case 3:mathGame(c);break;
                 case 4:guessGame(c);break;case 5:targetGame(c);break;case 6:dodgeGame(c);break;case 7:sequenceGame(c);break;
                 case 8:colorGame(c);break;case 9:oddGame(c);break;case 10:ttt(c);break;case 11:rps(c);break;
-                case 12:highCard(c);break;case 13:catchGame(c);break;default:timerGame(c);
+                case 12:highCard(c);break;case 13:catchGame(c);break;
+                case 15:stockGame(c);break;case 16:simulationGame(c);break;case 17:simulationGame(c);break;case 18:simulationGame(c);break;
+                case 19:simulationGame(c);break;case 20:simulationGame(c);break;case 21:simulationGame(c);break;case 22:simulationGame(c);break;
+                case 23:simulationGame(c);break;case 24:simulationGame(c);break;default:timerGame(c);
             }
         }
 
@@ -295,11 +321,126 @@ public class MainActivity extends Activity {
         void catchGame(Canvas c){rr(c,30,145,getWidth()-30,590,26,SUR);circle(c,fallingX,fallingY,18,GOLD);rr(c,catcherX-52,535,catcherX+52,562,12,ACC);bold(17,TXT);c.drawText("🪙 "+score+"   ❤️ "+lives,32,120,p);}
         void timerGame(Canvas c){if(state==0){intro(c,"כמה מהר תצליח לבצע את האתגר?","התחל");return;}long left=Math.max(0,60000-(System.currentTimeMillis()-start));bold(34,TXT);center(c,String.valueOf(left/1000),getWidth()/2,205);circle(c,getWidth()/2,365,108,ACC);bold(30,TXT);center(c,""+taps,getWidth()/2,377);}
 
+
+        void stockGame(Canvas c){
+            normal(13,MUTED);center(c,"בורסה וירטואלית • אין כסף אמיתי",getWidth()/2,110);
+            rr(c,18,128,getWidth()-18,250,24,SUR);
+            bold(14,MUTED);c.drawText("מחיר מניה",34,158,p);
+            bold(39,TXT);c.drawText(String.format(Locale.US,"$%.2f",simPrice),34,205,p);
+            normal(13,simPrice>=100?GREEN:RED);c.drawText(simPrice>=100?"▲ שוק חיובי":"▼ שוק שלילי",34,230,p);
+            bold(15,TXT);c.drawText("מזומן",235,158,p);normal(16,GREEN);c.drawText(String.format(Locale.US,"$%.0f",simCash),235,183,p);
+            bold(15,TXT);c.drawText("מניות",235,210,p);normal(16,GOLD);c.drawText(String.format(Locale.US,"%.0f",simShares),235,235,p);
+            bold(16,TXT);c.drawText("יום "+simDay+"/30",20,285,p);
+            normal(13,MUTED);c.drawText("שווי תיק",190,285,p);
+            bold(18,GOLD);c.drawText(String.format(Locale.US,"$%.0f",simCash+simShares*simPrice),255,285,p);
+            rr(c,20,315,185,380,18,ACC);bold(15,TXT);center(c,"קנה 10",102,354);
+            rr(c,200,315,365,380,18,GREEN);bold(15,BG);center(c,"מכור 10",282,354);
+            rr(c,20,395,185,460,18,SUR2);bold(14,TXT);center(c,"קנה עד הסוף",102,434);
+            rr(c,200,395,365,460,18,SUR2);bold(14,TXT);center(c,"מכור הכול",282,434);
+            rr(c,20,480,365,545,20,BLUE);bold(17,TXT);center(c,"עבור ליום הבא",192,520);
+            normal(13,MUTED);center(c,simStatus,getWidth()/2,580);
+        }
+
+        String simName(Game g){
+            switch(g.type){
+                case 16:return "עיר";
+                case 17:return "תעופה";
+                case 18:return "מסעדה";
+                case 19:return "מלון";
+                case 20:return "חקלאות";
+                case 21:return "לוגיסטיקה";
+                case 22:return "אנרגיה";
+                case 23:return "חלל";
+                default:return "אימפריה";
+            }
+        }
+
+        void simulationGame(Canvas c){
+            Game g=games.get(gameId-1);
+            String theme=simName(g);
+            normal(13,MUTED);center(c,theme+" • ניהול משאבים • אופליין",getWidth()/2,110);
+            rr(c,18,128,getWidth()-18,260,24,SUR);
+            bold(14,MUTED);c.drawText("תקציב",34,158,p);
+            bold(28,GREEN);c.drawText(String.format(Locale.US,"$%.0f",simCash),34,198,p);
+            bold(14,MUTED);c.drawText("משאב",225,158,p);
+            bold(24,GOLD);c.drawText(String.format(Locale.US,"%.0f",simResource),225,198,p);
+            bold(14,MUTED);c.drawText("מוניטין",34,233,p);
+            normal(16,TXT);c.drawText(String.format(Locale.US,"%.0f/100",simRating),110,233,p);
+            bold(16,TXT);c.drawText("יום "+simDay+"/20",250,233,p);
+
+            rr(c,20,285,185,350,18,ACC);bold(14,TXT);center(c,"השקעה",102,324);
+            rr(c,200,285,365,350,18,GREEN);bold(14,BG);center(c,"שדרוג",282,324);
+            rr(c,20,365,185,430,18,SUR2);bold(14,TXT);center(c,"שיווק",102,404);
+            rr(c,200,365,365,430,18,SUR2);bold(14,TXT);center(c,"חיסכון",282,404);
+            rr(c,20,450,365,515,20,BLUE);bold(17,TXT);center(c,"עבור ליום הבא",192,490);
+            normal(13,MUTED);center(c,simStatus,getWidth()/2,555);
+
+            normal(12,MUTED);center(c,"המטרה: לסיים עם העסק הכי חזק",getWidth()/2,590);
+        }
+
+        void nextStockDay(){
+            float change=(rnd.nextFloat()*0.16f)-0.08f;
+            if(rnd.nextInt(10)==0) change+=(rnd.nextBoolean()?0.12f:-0.12f);
+            simPrice=Math.max(15f,simPrice*(1f+change));
+            simDay++;
+            simStatus=change>=0?"📈 השוק עלה היום":"📉 השוק ירד היום";
+            if(simDay>30){
+                score=(int)Math.max(0,simCash+simShares*simPrice-10000);
+                finishGame("תיק סופי: $"+(int)(simCash+simShares*simPrice));
+            }
+        }
+
+        void stockTouch(float x,float y){
+            if(state==0){state=1;return;}
+            if(y>=315&&y<=380&&x<=185){
+                if(simCash>=simPrice*10){simCash-=simPrice*10;simShares+=10;simStatus="קנית 10 מניות";}
+                else simStatus="אין מספיק מזומן";
+            }else if(y>=315&&y<=380&&x>185){
+                float n=Math.min(10,simShares);if(n>0){simShares-=n;simCash+=n*simPrice;simStatus="מכרת 10 מניות";}else simStatus="אין מניות למכור";
+            }else if(y>=395&&y<=460&&x<=185){
+                int n=(int)(simCash/simPrice);if(n>0){simCash-=n*simPrice;simShares+=n;simStatus="קנית "+n+" מניות";}else simStatus="אין מספיק מזומן";
+            }else if(y>=395&&y<=460&&x>185){
+                if(simShares>0){simCash+=simShares*simPrice;simShares=0;simStatus="מכרת את כל המניות";}else simStatus="אין מניות למכור";
+            }else if(y>=480&&y<=555){
+                nextStockDay();
+            }
+        }
+
+        void simulationTouch(float x,float y){
+            if(state==0){state=1;return;}
+            if(y>=285&&y<=350&&x<=185){
+                simCash-=100;simResource=Math.max(0,simResource-3);simRating=Math.min(100,simRating+4);simStatus="השקעה בוצעה";
+            }else if(y>=285&&y<=350&&x>185){
+                if(simCash>=180){simCash-=180;simResource=Math.min(100,simResource+10);simRating=Math.min(100,simRating+6);simStatus="שדרוג הושלם";}
+                else simStatus="אין מספיק תקציב";
+            }else if(y>=365&&y<=430&&x<=185){
+                simCash-=80;simRating=Math.min(100,simRating+9);simStatus="לקוחות חדשים הגיעו";
+            }else if(y>=365&&y<=430&&x>185){
+                simResource=Math.min(100,simResource+12);simCash+=40;simStatus="חסכת משאבים";
+            }else if(y>=450&&y<=515){
+                simDay++;
+                float revenue=80+(simRating*4);
+                simCash+=revenue;
+                simResource=Math.max(0,simResource-6);
+                simRating=Math.max(0,simRating-1);
+                simStatus="היום הסתיים • הכנסה $"+(int)revenue;
+                if(simDay>20){
+                    score=(int)Math.max(0,simCash+simRating*10);
+                    finishGame("שווי העסק: $"+(int)simCash);
+                }
+            }
+        }
+
         void startGame(int id){
             gameId=id;screen=1;state=0;score=0;best=prefs.getInt("best_"+id,0);round=0;taps=0;message="";input="";running=true;
             h.removeCallbacksAndMessages(null);
             Game g=games.get(id-1);
             if(g.type==4)answer=1+rnd.nextInt(100);
+            if(g.type>=15){
+                state=1; simStatus="";
+                if(g.type==15){simCash=10000;simPrice=100;simShares=0;simDay=1;}
+                else {simCash=1000;simResource=50;simRating=50;simDay=1;}
+            }
             if(g.type==10){Arrays.fill(board,0);state=1;playerTurn=true;}
             if(g.type>=5&&g.type<=6){state=1;catcherX=getWidth()/2;fallingY=180;fallingX=55+rnd.nextInt(Math.max(1,getWidth()-110));postLoop();}
             if(g.type==12)state=1;
@@ -340,7 +481,7 @@ public class MainActivity extends Activity {
                 }
                 if(e.getAction()==MotionEvent.ACTION_UP){
                     if(!dragging){
-                        if(y>=198&&y<=240){handleCategoryTap(x);return true;}
+                        if(y>=195&&y<=286){handleCategoryTap(x,y);return true;}
                         if(y>=100&&y<=182){Game daily=games.get((int)(System.currentTimeMillis()/86400000L)%games.size());startGame(daily.id);return true;}
                         float contentY=y+scrollY;
                         if(contentY>=258){
@@ -366,19 +507,21 @@ public class MainActivity extends Activity {
                 case 0:tapTouch(y);break;case 1:reactionTouch();break;case 2:memoryTouch(x,y);break;case 3:mathTouch(x,y);break;
                 case 4:guessTouch(x,y);break;case 5:targetTouch(x,y);break;case 6:catcherX=(int)x;break;case 7:sequenceTouch(x,y);break;
                 case 8:colorTouch(x);break;case 9:oddTouch(x,y);break;case 10:tttTouch(x,y);break;case 11:rpsTouch(x,y);break;
-                case 12:highTouch(y);break;case 13:catcherX=(int)x;break;default:timerTouch(y);break;
+                case 12:highTouch(y);break;case 13:catcherX=(int)x;break;
+                case 15:stockTouch(x,y);break;
+                case 16:case 17:case 18:case 19:case 20:case 21:case 22:case 23:case 24:simulationTouch(x,y);break;
+                default:timerTouch(y);break;
             }
             invalidate();return true;
         }
 
-        void handleCategoryTap(float x){
-            // category chips occupy the first visible row; calculate their widths exactly as drawHome
-            float cx=20;
-            for(int i=0;i<cats.length;i++){
-                p.setTextSize(13);float ww=Math.max(70,p.measureText(cats[i])+34);
-                if(x>=cx&&x<=cx+ww){selectedCat=i;scrollY=0;invalidate();return;}
-                cx+=ww+8;if(cx>getWidth()-70)break;
-            }
+        void handleCategoryTap(float x,float y){
+            float chipW=(getWidth()-56)/7f;
+            int row=(int)((y-195)/46);
+            int col=(int)((x-20)/(chipW+6));
+            if(row<0||row>1||col<0||col>6)return;
+            int idx=row*7+col;
+            if(idx<cats.length){selectedCat=idx;scrollY=0;invalidate();}
         }
         int findVisibleIndex(int n){
             int k=0;for(int i=0;i<games.size();i++){if(selectedCat!=0&&!games.get(i).cat.equals(cats[selectedCat]))continue;if(k==n)return i;k++;}return -1;
