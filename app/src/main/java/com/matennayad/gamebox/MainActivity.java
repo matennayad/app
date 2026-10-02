@@ -40,6 +40,8 @@ public class MainActivity extends Activity {
         boolean running=false,playerTurn=true;
         int[] board=new int[9],memory=new int[12],seq=new int[12];
         int memLen=2,memPos=0,seqLen=3,seqPos=0,lives=3,catcherX=300,fallingX=300,fallingY=200,taps=0,colorIndex=0;
+        float scrollY=0f,downX=0f,downY=0f,lastY=0f;
+        boolean homeDragging=false;
         final int BG=Color.rgb(11,16,32),SUR=Color.rgb(18,26,47),SUR2=Color.rgb(25,35,61),TXT=Color.rgb(247,249,255),MUTED=Color.rgb(155,167,192),ACC=Color.rgb(124,92,255),GREEN=Color.rgb(46,216,163),RED=Color.rgb(255,92,122),GOLD=Color.rgb(255,200,87);
         ArrayList<Game> games=new ArrayList<>();
 
@@ -56,7 +58,7 @@ public class MainActivity extends Activity {
             games.add(new Game(17,"קלף גבוה","🃏","חשיבה")); games.add(new Game(18,"זוגות","🃏","חשיבה"));
             games.add(new Game(19,"מספר מסתורי","🎲","חשיבה")); games.add(new Game(20,"אתגר דקה","🔥","מהירות"));
         }
-        void goHome(){screen=0;running=false;h.removeCallbacksAndMessages(null);invalidate();}
+        void goHome(){screen=0;running=false;scrollY=0f;homeDragging=false;h.removeCallbacksAndMessages(null);invalidate();}
         void bold(float s,int col){p.setTypeface(Typeface.create("sans",Typeface.BOLD));p.setTextSize(s);p.setColor(col);}
         void normal(float s,int col){p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextSize(s);p.setColor(col);}
         void center(Canvas c,String s,float x,float y){c.drawText(s,x-p.measureText(s)/2,y,p);}
@@ -67,14 +69,37 @@ public class MainActivity extends Activity {
         void button(Canvas c,float l,float t,float r,float b,String s,int col){round(c,l,t,r,b,20,col);bold(17,TXT);center(c,s,(l+r)/2,(t+b)/2+6);}
         @Override protected void onDraw(Canvas c){c.drawColor(BG);if(screen==0)home(c);else game(c);}
         void home(Canvas c){
-            bold(31,TXT);c.drawText("GameBox",24,52,p);normal(14,MUTED);c.drawText("20 משחקים • אופליין • שיאים נשמרים",25,78,p);
-            round(c,getWidth()-120,25,getWidth()-22,72,22,SUR2);bold(15,GOLD);center(c,"🏆",getWidth()-92,55);normal(13,TXT);c.drawText("שיאים",getWidth()-72,59,p);
-            int y=98,w=(getWidth()-55)/2,col=0;
+            bold(31,TXT);c.drawText("GameBox",24,52,p);
+            normal(14,MUTED);c.drawText("20 משחקים • אופליין • שיאים נשמרים",25,78,p);
+            round(c,getWidth()-120,25,getWidth()-22,72,22,SUR2);
+            bold(15,GOLD);center(c,"🏆",getWidth()-92,55);
+            normal(13,TXT);c.drawText("שיאים",getWidth()-72,59,p);
+
+            int w=(getWidth()-55)/2;
+            int contentBottom=98+((games.size()+1)/2)*119+8;
+            float maxScroll=Math.max(0,contentBottom-(getHeight()-8));
+            if(scrollY>maxScroll)scrollY=maxScroll;
+
+            c.save();
+            c.clipRect(0,90,getWidth(),getHeight());
+            c.translate(0,-scrollY);
+            int y=98,col=0;
             for(Game g:games){
                 float l=20+col*(w+15),r=l+w;
-                round(c,l,y,r,y+108,22,SUR);bold(25,TXT);c.drawText(g.icon,l+15,y+37,p);bold(16,TXT);c.drawText(g.title,l+15,y+66,p);
+                round(c,l,y,r,y+108,22,SUR);
+                bold(25,TXT);c.drawText(g.icon,l+15,y+37,p);
+                bold(16,TXT);c.drawText(g.title,l+15,y+66,p);
                 normal(11,MUTED);c.drawText(g.cat+"  •  "+bestFor(g.id),l+15,y+89,p);
-                col++;if(col==2){col=0;y+=119;}
+                col++;
+                if(col==2){col=0;y+=119;}
+            }
+            c.restore();
+
+            if(maxScroll>0){
+                float trackH=getHeight()-110f;
+                float thumbH=Math.max(45f,trackH*(getHeight()/((float)getHeight()+maxScroll)));
+                float thumbY=98+(trackH-thumbH)*(scrollY/maxScroll);
+                round(c,getWidth()-7,thumbY,getWidth()-3,thumbY+thumbH,3,SUR2);
             }
         }
         void header(Canvas c,String title){round(c,16,18,67,68,18,SUR2);bold(28,TXT);center(c,"‹",41,53);bold(22,TXT);c.drawText(title,83,49,p);normal(12,MUTED);c.drawText("שיא "+best,84,69,p);}
@@ -112,7 +137,41 @@ public class MainActivity extends Activity {
         void updateLoop(){if(gameId==13){tx+=4;ty+=2;if(tx>getWidth()-70||tx<70)tx=getWidth()-tx; if(ty>520)ty=190;score=(int)((System.currentTimeMillis()-start)/1000);}if(gameId==14){fallingY+=5+score/10;if(fallingY>530){if(Math.abs(fallingX-catcherX)<70)score++;else lives--;fallingY=180;fallingX=55+rnd.nextInt(Math.max(1,getWidth()-110));if(lives<=0)finish("נגמרו החיים");}}if(gameId==15){fallingY+=7;if(fallingY>540){fallingY=180;fallingX=55+rnd.nextInt(Math.max(1,getWidth()-110));score++;}if(Math.abs(fallingX-catcherX)<40&&fallingY>495)finish("פגעת במכשול");}if(gameId==20&&System.currentTimeMillis()-start>=60000)finish("הזמן נגמר");}
         @Override public boolean onTouchEvent(MotionEvent e){
             float x=e.getX(),y=e.getY();
-            if(screen==0){if(e.getAction()!=MotionEvent.ACTION_DOWN)return true;int row=(int)((y-98)/119),col=x<getWidth()/2?0:1,idx=row*2+col;if(y>=98&&idx>=0&&idx<games.size())startGame(games.get(idx).id);return true;}
+            if(screen==0){
+                if(e.getAction()==MotionEvent.ACTION_DOWN){
+                    downX=x;downY=y;lastY=y;homeDragging=false;
+                    return true;
+                }
+                if(e.getAction()==MotionEvent.ACTION_MOVE){
+                    float dy=y-lastY;
+                    if(Math.abs(y-downY)>8f) homeDragging=true;
+                    if(homeDragging){
+                        scrollY=Math.max(0f,scrollY-dy);
+                        float contentBottom=98+((games.size()+1)/2)*119+8;
+                        float maxScroll=Math.max(0f,contentBottom-(getHeight()-8));
+                        if(scrollY>maxScroll)scrollY=maxScroll;
+                        lastY=y;invalidate();
+                    }
+                    return true;
+                }
+                if(e.getAction()==MotionEvent.ACTION_UP){
+                    if(!homeDragging){
+                        float contentY=y+scrollY;
+                        if(contentY>=98){
+                            int row=(int)((contentY-98)/119);
+                            int col=x<getWidth()/2?0:1;
+                            int idx=row*2+col;
+                            float rowY=contentY-(98+row*119);
+                            if(rowY>=0&&rowY<=108&&idx>=0&&idx<games.size()){
+                                startGame(games.get(idx).id);
+                            }
+                        }
+                    }
+                    homeDragging=false;
+                    return true;
+                }
+                return true;
+            }
             if(y<80&&x<75&&e.getAction()==MotionEvent.ACTION_DOWN){goHome();return true;}
             if(state==99&&e.getAction()==MotionEvent.ACTION_DOWN){if(y>400&&y<485)startGame(gameId);else if(y>485)goHome();return true;}
             if(e.getAction()==MotionEvent.ACTION_MOVE&&gameId>=13&&gameId<=15){catcherX=(int)x;return true;}
