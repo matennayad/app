@@ -39,7 +39,9 @@ public class MainActivity extends Activity {
         String[] cats={"הכול","מהירות","חשיבה","שניים","ארקייד","זיכרון","אתגרים","מבחנים","מסתורין","זמן","קלפים"};
         int screen=0,selectedCat=0,gameId=-1,score=0,best=0,round=0,state=0,answer=0,a=0,b=0;
         long start;
-        float scrollY=0f,downX,downY,lastY;
+        float scrollY=0f,downX,downY,lastY,lastMoveY;
+        long lastMoveTime=0L;
+        float flingVelocity=0f;
         boolean dragging=false,running=false;
         float tx=300,ty=300;
         int taps=0,lives=3,catcherX=300,fallingX=300,fallingY=180,colorIndex=0,seqPos=0,seqLen=3;
@@ -161,9 +163,33 @@ public class MainActivity extends Activity {
         String bestFor(int id){return String.valueOf(prefs.getInt("best_"+id,0));}
         void saveBest(){int old=prefs.getInt("best_"+gameId,0);if(score>old)prefs.edit().putInt("best_"+gameId,score).apply();best=Math.max(best,score);}
         void finishGame(String msg){running=false;saveBest();state=99;message=msg;h.removeCallbacksAndMessages(null);invalidate();}
-        void goHome(){screen=0;running=false;scrollY=0;dragging=false;h.removeCallbacksAndMessages(null);invalidate();}
+        void goHome(){screen=0;running=false;scrollY=0;dragging=false;flingVelocity=0f;h.removeCallbacksAndMessages(null);invalidate();}
 
         @Override protected void onDraw(Canvas c){c.drawColor(BG);if(screen==0)drawHome(c);else drawGame(c);}
+
+        float maxHomeScroll(){
+            int count=0;
+            for(Game g:games) if(selectedCat==0||g.cat.equals(cats[selectedCat])) count++;
+            int rows=(count+1)/2;
+            return Math.max(0,258+rows*118-(getHeight()-14));
+        }
+        void startFling(){
+            if(Math.abs(flingVelocity)<0.05f) return;
+            h.postDelayed(new Runnable(){
+                @Override public void run(){
+                    if(screen!=0||Math.abs(flingVelocity)<0.05f){flingVelocity=0f;return;}
+                    scrollY += flingVelocity*16f;
+                    float max=maxHomeScroll();
+                    if(scrollY<=0){scrollY=0;flingVelocity=0f;}
+                    else if(scrollY>=max){scrollY=max;flingVelocity=0f;}
+                    else{
+                        flingVelocity*=0.91f;
+                        h.postDelayed(this,16);
+                    }
+                    invalidate();
+                }
+            },16);
+        }
 
         void drawHome(Canvas c){
             normal(13,MUTED);c.drawText("GAMEBOX",24,28,p);
@@ -295,23 +321,37 @@ public class MainActivity extends Activity {
         @Override public boolean onTouchEvent(MotionEvent e){
             float x=e.getX(),y=e.getY();
             if(screen==0){
-                if(e.getAction()==MotionEvent.ACTION_DOWN){downX=x;downY=y;lastY=y;dragging=false;return true;}
+                if(e.getAction()==MotionEvent.ACTION_DOWN){
+                    h.removeCallbacksAndMessages(null);
+                    downX=x;downY=y;lastY=y;lastMoveY=y;lastMoveTime=System.currentTimeMillis();
+                    dragging=false;flingVelocity=0f;return true;
+                }
                 if(e.getAction()==MotionEvent.ACTION_MOVE){
+                    long now=System.currentTimeMillis();
+                    float dy=y-lastY;
                     if(Math.abs(y-downY)>8)dragging=true;
-                    if(dragging&&y>245){float dy=y-lastY;scrollY=Math.max(0,scrollY-dy);lastY=y;invalidate();}
+                    if(dragging&&y>245){
+                        long dt=Math.max(1,now-lastMoveTime);
+                        scrollY=Math.max(0,Math.min(maxHomeScroll(),scrollY-dy));
+                        flingVelocity=(-dy)/dt;
+                        lastY=y;lastMoveY=y;lastMoveTime=now;invalidate();
+                    }
                     return true;
                 }
                 if(e.getAction()==MotionEvent.ACTION_UP){
                     if(!dragging){
                         if(y>=198&&y<=240){handleCategoryTap(x);return true;}
                         if(y>=100&&y<=182){Game daily=games.get((int)(System.currentTimeMillis()/86400000L)%games.size());startGame(daily.id);return true;}
-                        float contentY=y+scrollY;if(contentY>=258){
+                        float contentY=y+scrollY;
+                        if(contentY>=258){
                             int row=(int)((contentY-258)/118),col=x<getWidth()/2?0:1,idx=findVisibleIndex(row*2+col);
                             if(idx>=0){
                                 float rowY=contentY-(258+row*118);
                                 if(rowY>=0&&rowY<=105)startGame(games.get(idx).id);
                             }
                         }
+                    }else{
+                        startFling();
                     }
                     return true;
                 }
